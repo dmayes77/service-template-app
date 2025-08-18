@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+:root{
+  --tint: #0A84FF; /* iOS system blue; customize per brand */
+  /* modern safe-area */
+  --sat: env(safe-area-inset-top);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
+  --sar: env(safe-area-inset-right);
+  /* legacy iOS 11 fallback (harmless elsewhere) */
+  --satl: constant(safe-area-inset-top);
+  --sabl: constant(safe-area-inset-bottom);
+  --sall: constant(safe-area-inset-left);
+  --sarl: constant(safe-area-inset-right);
+}
+
+html, body {
+  font-family: -apple-system, system-ui, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; scroll-behavior:auto!important; }
+}

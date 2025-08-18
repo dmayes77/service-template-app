@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -17,25 +15,39 @@
 /.next/
 /out/
 
-# production
+# PWA (Serwist output)
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/serwist-*.js
+public/*worker*.js
+public/precache-*.js
+public/swe-worker-*.js
+
+# production / builds
 /build
+/dist
 
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
+# env & local
 .env*
+!.env.example
 
 # vercel
 .vercel
 
+# editors & OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+# NOTE: keep next-env.d.ts committed (do NOT ignore it)
