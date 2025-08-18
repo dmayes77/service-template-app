@@ -1,5 +1,6 @@
-// next.config.mjs
+// next.config.ts
 import withSerwistInit from "@serwist/next";
+import type { NextConfig } from "next";
 
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
@@ -11,9 +12,19 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV !== "production",
 });
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.sanity.io",
+        pathname: "/**", // required so TS treats this as a RemotePattern
+      },
+    ],
+    // Alternative (simpler): domains: ["cdn.sanity.io"],
+  },
 
   async headers() {
     return [
@@ -21,7 +32,6 @@ const nextConfig = {
         source: "/(.*)",
         headers: [
           {
-            // Allow Payment Request API in our doc + the OrbisX embed
             key: "Permissions-Policy",
             value: 'payment=(self "https://orbisx.ca" "https://www.orbisx.ca")',
           },
