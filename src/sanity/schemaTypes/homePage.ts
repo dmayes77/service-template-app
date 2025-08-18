@@ -6,18 +6,18 @@ export const homePage = defineType({
   type: "document",
   fields: [
     defineField({
-      name: "logo",
-      title: "Logo (center circle)",
-      type: "image",
-      options: { hotspot: true },
+      name: "logoRef",
+      title: "Logo (from Media Library)",
+      type: "reference",
+      to: [{ type: "mediaImage" }],
       validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: "background",
-      title: "Background image (full screen)",
-      type: "image",
-      options: { hotspot: true },
-      validation: (Rule) => Rule.required(),
+      name: "backgroundRef",
+      title: "Background image (from Media Library)",
+      type: "reference",
+      to: [{ type: "mediaImage" }],
+      validation: (R) => R.required(),
     }),
     defineField({
       name: "quickLinks",

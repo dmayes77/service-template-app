@@ -1,3 +1,5 @@
+import { groq } from "next-sanity";
+
 export const appSettingsQuery = /* groq */ `
 *[_type == "appSettings"][0]{
   brandName,
@@ -26,3 +28,13 @@ export const homePageQuery = /* groq */ `
 export const appSettingsLiteQuery = /* groq */ `
 *[_type == "appSettings"][0]{ brandName, "logoUrl": logo.asset->url }`;
 
+export const servicesQuery = `
+*[_type == "service" && (defined(enabled) => enabled != false) || !defined(enabled)]
+| order(coalesce(order, 999), name asc) {
+  name,
+  "slug": slug.current,
+  description,
+  "imageUrl": image.asset->url,
+  "imageAlt": coalesce(image.alt, name)
+}
+`;

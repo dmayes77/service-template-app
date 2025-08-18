@@ -1,5 +1,5 @@
 import { client } from "@/sanity";
-import { appSettingsQuery } from "@/sanity/queries";
+import { appSettingsQuery } from "@/sanity/queries/appSettingsQuery";
 import InstallGate from "./InstallGate";
 
 export default async function InstallGateFromSanity() {

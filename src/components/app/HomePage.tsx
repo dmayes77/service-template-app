@@ -1,15 +1,36 @@
+// src/components/app/HomePage.tsx
 import Link from "next/link";
 import type { JSX } from "react";
 import { client } from "@/sanity/lib/client";
-import { homePageQuery } from "@/sanity/queries";
+import { homePageQuery } from "@/sanity/queries/homePageQuery";
+import { appSettingsLiteQuery } from "@/sanity/queries/appSettingsQuery";
 import { CalendarCheck, Package, Images, ChevronRight } from "lucide-react";
 
-type Quick = { label?: string; href?: string; icon?: string };
-type HomeData = { logoUrl?: string; bgUrl?: string; quickLinks?: Quick[] };
+export const revalidate = 0;
 
-export const revalidate = 0; // reflect Studio edits immediately in dev
+// --- types --------------------------------------------------------------
 
-const ICONS: Record<string, (p: { className?: string }) => JSX.Element> = {
+type IconKey = "calendar-check" | "package" | "images";
+
+type QuickLink = {
+  label: string;
+  href: string;
+  icon?: IconKey;
+};
+
+type HomeData = {
+  backgroundUrl?: string;
+  quickLinks?: QuickLink[];
+};
+
+type SettingsLite = {
+  brandName?: string;
+  logoUrl?: string;
+};
+
+// --- icon map (typed) ---------------------------------------------------
+
+const ICONS: Record<IconKey, (p: { className?: string }) => JSX.Element> = {
   "calendar-check": (p) => (
     <CalendarCheck className={`h-6 w-6 ${p.className ?? ""}`} />
   ),
@@ -17,14 +38,25 @@ const ICONS: Record<string, (p: { className?: string }) => JSX.Element> = {
   images: (p) => <Images className={`h-6 w-6 ${p.className ?? ""}`} />,
 };
 
-export default async function HomePage() {
-  const data = await client.fetch<HomeData>(homePageQuery);
+// --- page ---------------------------------------------------------------
 
-  const quick = data?.quickLinks?.slice(0, 3) ?? [
+export default async function HomePage() {
+  const [data, settings] = await Promise.all([
+    client.fetch<HomeData>(homePageQuery),
+    client.fetch<SettingsLite>(appSettingsLiteQuery),
+  ]);
+
+  const bgUrl = data?.backgroundUrl;
+
+  const defaults: QuickLink[] = [
     { label: "Book Now", href: "/schedule", icon: "calendar-check" },
     { label: "Packages", href: "/packages", icon: "package" },
     { label: "Gallery", href: "/gallery", icon: "images" },
   ];
+
+  const quick: QuickLink[] =
+    (Array.isArray(data?.quickLinks) && data!.quickLinks!.slice(0, 3)) ||
+    defaults;
 
   return (
     <div className="fixed inset-0 overflow-hidden">
@@ -33,36 +65,36 @@ export default async function HomePage() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: data?.bgUrl ? `url(${data.bgUrl})` : "none",
-            backgroundColor: data?.bgUrl ? undefined : "#111",
+            backgroundImage: bgUrl ? `url(${bgUrl})` : "none",
+            backgroundColor: bgUrl ? undefined : "#111",
           }}
         />
         <div className="absolute inset-0 bg-black/45" />
       </div>
 
       {/* Centered stack */}
-      <div className="relative z-10 mx-auto grid max-w-md place-items-center px-5 mt-4">
+      <div className="relative z-10 mx-auto mt-4 grid max-w-md place-items-center px-5">
         <div className="w-full">
           <div className="grid place-items-center">
             <div className="grid aspect-square w-[min(78vw,420px)] place-items-center rounded-full">
-              {" "}
-              {/* eslint-disable-next-line @next/next/no-img-element */}{" "}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={data?.logoUrl || ""}
-                alt={"Logo"}
+                src={settings?.logoUrl || ""}
+                alt={settings?.brandName || "Logo"}
                 className="object-contain"
-              />{" "}
+              />
             </div>
           </div>
 
           {/* Buttons */}
           <div className="space-y-3">
             {quick.map((q, i) => {
-              const Icon = (q.icon && ICONS[q.icon]) || ICONS["calendar-check"];
+              const iconKey: IconKey = q.icon ?? "calendar-check";
+              const Icon = ICONS[iconKey];
               return (
                 <Link
                   key={`${q.href}-${i}`}
-                  href={q.href ?? "#"}
+                  href={q.href}
                   className="block rounded-xl bg-black/50 text-white shadow-lg ring-1 ring-white/10 backdrop-blur-md hover:bg-black"
                 >
                   <div className="flex items-center justify-between px-5 py-5">
@@ -70,9 +102,7 @@ export default async function HomePage() {
                       <div className="grid h-10 w-10 place-items-center rounded-lg bg-white/10">
                         <Icon />
                       </div>
-                      <span className="text-xl font-semibold">
-                        {q.label ?? "Action"}
-                      </span>
+                      <span className="text-xl font-semibold">{q.label}</span>
                     </div>
                     <ChevronRight className="h-6 w-6 text-white/70" />
                   </div>
