@@ -6,49 +6,59 @@ import PackageDetail, {
   PackageDetailDoc,
 } from "@/components/app/PackageDetail";
 
-type Params = { params: { slug: string } };
+export const revalidate = 60;
 
+// Static params for SSG
 export async function generateStaticParams() {
-  const slugs: string[] = await client.fetch(
+  const slugs = await client.fetch<string[]>(
     groq`*[_type == "servicePackage" && defined(slug.current)][].slug.current`
   );
   return slugs.map((slug) => ({ slug }));
 }
 
-export async function generateMetadata({ params }: Params) {
-  const data = await client.fetch(
+// Head metadata — NOTE: await params
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const data = await client.fetch<{ name?: string }>(
     groq`*[_type == "servicePackage" && slug.current == $slug][0]{name}`,
-    { slug: params.slug }
+    { slug }
   );
-  return { title: data?.name || "Package" };
+  return { title: data?.name ?? "Package" };
 }
 
-export default async function PackageDetailPage({ params }: Params) {
+// Page — NOTE: await params
+export default async function PackageDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
   const data = await client.fetch<PackageDetailDoc | null>(
     groq`
       *[_type == "servicePackage" && slug.current == $slug][0]{
         _id,
         name,
-        "slug": slug.current,
+        slug,                     // keep object shape {current}
         description,
         mainDescription,
         price,
         priceUnit,
         durationMinutes,
         includes,
-        // ⬇️ project URL + dims + alt directly
         "imageUrl": image.asset->url,
-        "w": image.asset->metadata.dimensions.width,
-        "h": image.asset->metadata.dimensions.height,
         "imageAlt": coalesce(image.alt, name),
         tieredPricing,
-        badge,
-        service->{ _id, name, "slug": slug.current }
+        badge
       }
     `,
-    { slug: params.slug }
+    { slug }
   );
 
-  if (!data) return notFound();
+  if (!data) notFound();
   return <PackageDetail pkg={data} />;
 }

@@ -1,4 +1,6 @@
 "use client";
+
+import Image from "next/image";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useEffect, useState } from "react";
 
@@ -26,7 +28,7 @@ export default function InstallGate({
   brand = "Your App",
   // background media
   bgImage = "/brand/bg.jpg",
-  videoSources = [] as Source[], // e.g. [{src:"/brand/install-bg.webm",type:"video/webm"},{src:"/brand/install-bg.mp4",type:"video/mp4"}]
+  videoSources = [] as Source[],
   videoPoster = "/brand/bg.jpg",
   // logo
   logoSrc = "/brand/logo.png",
@@ -40,7 +42,7 @@ export default function InstallGate({
   const { installed, canInstall, promptInstall, platform } = usePWAInstall();
   const [busy, setBusy] = useState(false);
 
-  // Respect user preferences: reduced-motion & save-data → use image
+  // Respect user prefs: reduced-motion & save-data → use image
   const [allowVideo, setAllowVideo] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -72,26 +74,33 @@ export default function InstallGate({
     }
   };
 
+  const showVideo = allowVideo && videoSources.length > 0;
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Install required"
       className="fixed inset-0 z-[90] grid place-items-center bg-black"
-      style={{
-        // image fallback when video not allowed/available
-        backgroundImage:
-          !allowVideo || videoSources.length === 0
-            ? `url(${bgImage})`
-            : undefined,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
     >
-      {/* Background video (only when allowed & provided) */}
-      {allowVideo && videoSources.length > 0 && (
+      {/* Background image (Next/Image) when video is not used */}
+      {!showVideo && (
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <Image
+            src={bgImage}
+            alt="" // decorative
+            fill
+            sizes="100vw"
+            priority
+            className="object-cover"
+          />
+        </div>
+      )}
+
+      {/* Background video (when allowed & provided) */}
+      {showVideo && (
         <video
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover"
           autoPlay
           muted
           loop
@@ -107,18 +116,22 @@ export default function InstallGate({
       )}
 
       {/* Darken overlay for legibility */}
-      <div className="absolute inset-0 bg-black/60" />
+      <div className="absolute inset-0 -z-10 bg-black/60" />
 
       {/* Content */}
       <div className="relative mx-4 w-full max-w-[560px] px-4">
         {/* Logo puck */}
         <div className="mx-auto grid aspect-square w-[min(78vw,420px)] place-items-center rounded-full">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={logoSrc}
-            alt={`${brand} logo`}
-            className="w-[100%] object-contain"
-          />
+          <div className="relative h-full w-full">
+            <Image
+              src={logoSrc}
+              alt={`${brand} logo`}
+              fill
+              priority
+              sizes="(max-width: 560px) 78vw, 420px"
+              className="object-contain"
+            />
+          </div>
         </div>
 
         {/* Card */}

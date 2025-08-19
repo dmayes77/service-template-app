@@ -27,6 +27,7 @@ export interface PackageDetailDoc {
 }
 
 export default function PackageDetail({ pkg }: { pkg: PackageDetailDoc }) {
+ 
   const [tintType, setTintType] = useState<"carbon" | "ceramic">("carbon");
   const [vehicleSize, setVehicleSize] = useState<
     "small" | "medium" | "large" | "xl"
@@ -35,7 +36,7 @@ export default function PackageDetail({ pkg }: { pkg: PackageDetailDoc }) {
   const matchedTier = pkg.tieredPricing?.find(
     (tier) => tier.tintType === tintType && tier.vehicleSize === vehicleSize
   );
-console.log(pkg.imageUrl);
+  
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {pkg.imageUrl && (
@@ -45,6 +46,7 @@ console.log(pkg.imageUrl);
             alt={pkg.imageAlt || pkg.name}
             width={800}
             height={450}
+            priority
             className="rounded-lg w-full h-auto object-cover"
           />
         </div>
