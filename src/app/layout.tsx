@@ -1,7 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
-import { SafeAreaGlobals } from "@/components/safe-area/SafeAreaGlobals";
+import SafeAreaGlobals  from "@/components/safe-area/SafeAreaGlobals";
 
 export const metadata: Metadata = {
   title: {

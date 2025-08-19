@@ -15,10 +15,8 @@ export interface PackageDetailDoc {
   durationMinutes?: number;
   includes?: string[];
   badge?: string;
-  image?: {
-    asset: { url: string };
-    alt?: string;
-  };
+  imageUrl?: string;
+  imageAlt?: string;
   tieredPricing?: {
     tintType: "carbon" | "ceramic";
     vehicleSize: "small" | "medium" | "large" | "xl";
@@ -37,14 +35,14 @@ export default function PackageDetail({ pkg }: { pkg: PackageDetailDoc }) {
   const matchedTier = pkg.tieredPricing?.find(
     (tier) => tier.tintType === tintType && tier.vehicleSize === vehicleSize
   );
-
+console.log(pkg.imageUrl);
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {pkg.image?.asset?.url && (
+      {pkg.imageUrl && (
         <div className="mb-6">
           <Image
-            src={pkg.image.asset.url}
-            alt={pkg.image.alt || pkg.name}
+            src={pkg.imageUrl}
+            alt={pkg.imageAlt || pkg.name}
             width={800}
             height={450}
             className="rounded-lg w-full h-auto object-cover"
