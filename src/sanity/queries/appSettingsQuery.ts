@@ -1,6 +1,10 @@
 // src/sanity/queries/appSettingsQuery.ts
 import { groq } from "next-sanity";
 
+export const bookingUrlQuery = groq`
+*[_type == "appSettings"][0]{ "bookingUrl": business.bookingUrl }
+`;
+
 export const appSettingsLiteQuery = groq`
 *[_type == "appSettings" && _id == "appSettings"][0]{
   "brandName": coalesce(brand.name, "App"),
