@@ -1,14 +1,14 @@
 // src/sanity/schemaTypes/appSettings.ts
 import { defineType, defineField } from "sanity";
-// If you already have hoursEntry object, keep this import path:
 import hoursEntry from "./objects/hoursEntry";
+import { mediaAssetSource } from "sanity-plugin-media";
 
 const appSettings = defineType({
   name: "appSettings",
   title: "App Settings",
   type: "document",
   fields: [
-    // ===== Brand / Visuals ===================================================
+    // ===== Brand ============================================================
     defineField({
       name: "brand",
       title: "Brand",
@@ -31,24 +31,23 @@ const appSettings = defineType({
             defineField({
               name: "main",
               title: "Main Logo",
-              type: "reference",
-              to: [{ type: "mediaImage" }],
-              options: { filter: 'category == "brand"' }, // your mediaImage category
-              validation: (R) => R.required(),
+              type: "image",
+              options: { hotspot: true, sources: [mediaAssetSource] },
+              fields: [{ name: "alt", title: "Alt text", type: "string" }],
             }),
             defineField({
               name: "badge",
               title: "Badge (optional)",
-              type: "reference",
-              to: [{ type: "mediaImage" }],
-              options: { filter: 'category == "brand"' },
+              type: "image",
+              options: { hotspot: true, sources: [mediaAssetSource] },
+              fields: [{ name: "alt", title: "Alt text", type: "string" }],
             }),
             defineField({
               name: "mark",
               title: "Logo Mark (favicon/app)",
-              type: "reference",
-              to: [{ type: "mediaImage" }],
-              options: { filter: 'category == "brand"' },
+              type: "image",
+              options: { hotspot: true, sources: [mediaAssetSource] },
+              fields: [{ name: "alt", title: "Alt text", type: "string" }],
             }),
           ],
         }),
@@ -58,27 +57,10 @@ const appSettings = defineType({
           type: "string",
           description: "Example: #0A84FF",
         }),
-        defineField({
-          name: "brandColors",
-          title: "Brand colors (optional)",
-          type: "object",
-          options: { collapsible: true, collapsed: true },
-          fields: [
-            defineField({ name: "primary", title: "Primary", type: "string" }),
-            defineField({
-              name: "secondary",
-              title: "Secondary",
-              type: "string",
-            }),
-            defineField({ name: "accent", title: "Accent", type: "string" }),
-            defineField({ name: "neutral", title: "Neutral", type: "string" }),
-            defineField({ name: "text", title: "Text", type: "string" }),
-          ],
-        }),
       ],
     }),
 
-    // ===== Business / Contact ===============================================
+    // ===== Business =========================================================
     defineField({
       name: "business",
       title: "Business",
@@ -93,7 +75,6 @@ const appSettings = defineType({
         defineField({ name: "phone", title: "Phone", type: "string" }),
         defineField({ name: "email", title: "Email", type: "string" }),
         defineField({ name: "website", title: "Website", type: "url" }),
-
         defineField({
           name: "address",
           title: "Address",
@@ -117,7 +98,6 @@ const appSettings = defineType({
             defineField({ name: "mapUrl", title: "Map URL", type: "url" }),
           ],
         }),
-
         defineField({
           name: "isServiceAreaBusiness",
           title: "Service-area business",
@@ -146,14 +126,12 @@ const appSettings = defineType({
           title: "Service Radius (miles)",
           type: "number",
         }),
-
         defineField({
           name: "hoursSpec",
           title: "Opening Hours",
           type: "array",
           of: [{ type: "hoursEntry" }],
         }),
-
         defineField({
           name: "socials",
           title: "Socials",
@@ -167,7 +145,6 @@ const appSettings = defineType({
             defineField({ name: "tiktok", title: "TikTok", type: "url" }),
           ],
         }),
-
         defineField({
           name: "priceRange",
           title: "Price Range",
@@ -180,7 +157,6 @@ const appSettings = defineType({
           type: "array",
           of: [{ type: "string" }],
         }),
-
         defineField({ name: "bookingUrl", title: "Booking URL", type: "url" }),
         defineField({
           name: "privacyPolicyUrl",
@@ -192,7 +168,6 @@ const appSettings = defineType({
           title: "Terms of Service URL",
           type: "url",
         }),
-
         defineField({
           name: "designCompany",
           title: "Design/Developer",
@@ -205,7 +180,7 @@ const appSettings = defineType({
       ],
     }),
 
-    // ===== Splash / Install Gate (keep) =====================================
+    // ===== Splash ============================================================
     defineField({
       name: "splash",
       title: "Install Gate / Splash",
@@ -222,7 +197,7 @@ const appSettings = defineType({
           name: "bgImage",
           title: "Background image",
           type: "image",
-          options: { hotspot: true },
+          options: { hotspot: true, sources: [mediaAssetSource] },
           hidden: ({ parent }: { parent?: { useVideo?: boolean } }) =>
             !!parent?.useVideo,
         }),
@@ -246,13 +221,14 @@ const appSettings = defineType({
           name: "videoPoster",
           title: "Video poster",
           type: "image",
+          options: { hotspot: true, sources: [mediaAssetSource] },
           hidden: ({ parent }: { parent?: { useVideo?: boolean } }) =>
             !parent?.useVideo,
         }),
       ],
     }),
 
-    // ===== Default SEO =======================================================
+    // ===== SEO ===============================================================
     defineField({
       name: "seo",
       title: "Default SEO",
@@ -269,7 +245,7 @@ const appSettings = defineType({
           name: "ogImage",
           title: "Open Graph Image",
           type: "image",
-          options: { hotspot: true },
+          options: { hotspot: true, sources: [mediaAssetSource] },
         }),
         defineField({ name: "canonical", title: "Canonical URL", type: "url" }),
       ],

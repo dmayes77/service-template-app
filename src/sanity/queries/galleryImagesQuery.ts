@@ -1,11 +1,14 @@
-export const galleryImagesQuery = `
-*[_type == "mediaImage" && coalesce(showInGallery, false) && !coalesce(archived, false)]
-| order(coalesce(priority, 999), _createdAt desc){
+// src/sanity/queries/galleryImagesQuery.ts
+export const galleryImagesQuery = /* groq */ `
+*[
+  _type == "sanity.imageAsset" &&
+  references(*[_type == "media.tag" && lower(name.current) == "gallery"]._id)
+]
+| order(_createdAt desc) {
   _id,
-  title,
-  "alt": coalesce(image.alt, title),
-  "imageUrl": image.asset->url,
-  "w": image.asset->metadata.dimensions.width,
-  "h": image.asset->metadata.dimensions.height
+  "imageUrl": url,
+  "w": metadata.dimensions.width,
+  "h": metadata.dimensions.height,
+  "alt": coalesce(altText, originalFilename)
 }
 `;

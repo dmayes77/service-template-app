@@ -1,15 +1,15 @@
 // src/components/app/HomePage.tsx
 import Link from "next/link";
+import Image from "next/image";
 import type { JSX } from "react";
 import { client } from "@/sanity/lib/client";
 import { homePageQuery } from "@/sanity/queries/homePageQuery";
-import { appSettingsLiteQuery } from "@/sanity/queries/appSettingsQuery";
+import { appSettingsQuery } from "@/sanity/queries/appSettingsQuery";
 import { CalendarCheck, Package, Images, ChevronRight } from "lucide-react";
 
 export const revalidate = 0;
 
 // --- types --------------------------------------------------------------
-
 type IconKey = "calendar-check" | "package" | "images";
 
 type QuickLink = {
@@ -19,17 +19,16 @@ type QuickLink = {
 };
 
 type HomeData = {
-  backgroundUrl?: string;
+  logoUrl?: string;
+  bgUrl?: string;
   quickLinks?: QuickLink[];
 };
 
 type SettingsLite = {
   brandName?: string;
-  logoUrl?: string;
 };
 
-// --- icon map (typed) ---------------------------------------------------
-
+// --- icon map -----------------------------------------------------------
 const ICONS: Record<IconKey, (p: { className?: string }) => JSX.Element> = {
   "calendar-check": (p) => (
     <CalendarCheck className={`h-6 w-6 ${p.className ?? ""}`} />
@@ -39,14 +38,13 @@ const ICONS: Record<IconKey, (p: { className?: string }) => JSX.Element> = {
 };
 
 // --- page ---------------------------------------------------------------
-
 export default async function HomePage() {
-  const [data, settings] = await Promise.all([
+  const [home, settings] = await Promise.all([
     client.fetch<HomeData>(homePageQuery),
-    client.fetch<SettingsLite>(appSettingsLiteQuery),
+    client.fetch<SettingsLite>(appSettingsQuery),
   ]);
 
-  const bgUrl = data?.backgroundUrl;
+  const bgUrl = home?.bgUrl;
 
   const defaults: QuickLink[] = [
     { label: "Book Now", href: "/schedule", icon: "calendar-check" },
@@ -55,7 +53,7 @@ export default async function HomePage() {
   ];
 
   const quick: QuickLink[] =
-    (Array.isArray(data?.quickLinks) && data!.quickLinks!.slice(0, 3)) ||
+    (Array.isArray(home?.quickLinks) && home.quickLinks.slice(0, 3)) ||
     defaults;
 
   return (
@@ -76,13 +74,17 @@ export default async function HomePage() {
       <div className="relative z-10 mx-auto mt-4 grid max-w-md place-items-center px-5">
         <div className="w-full">
           <div className="grid place-items-center">
-            <div className="grid aspect-square w-[min(78vw,420px)] place-items-center rounded-full">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={settings?.logoUrl || ""}
-                alt={settings?.brandName || "Logo"}
-                className="object-contain"
-              />
+            <div className="relative grid aspect-square w-[min(78vw,420px)] place-items-center rounded-full">
+              {home.logoUrl ? (
+                <Image
+                  src={home.logoUrl}
+                  alt={settings.brandName || "Logo"}
+                  fill
+                  sizes="(max-width: 420px) 78vw, 420px"
+                  className="object-contain"
+                  priority
+                />
+              ) : null}
             </div>
           </div>
 

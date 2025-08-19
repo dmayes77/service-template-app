@@ -17,12 +17,14 @@ export const structure: StructureResolver = (S) =>
         .child(S.document().schemaType("homePage").documentId("homePage")),
       S.divider(),
       S.documentTypeListItem("service").title("Services"),
-      S.documentTypeListItem("mediaImage").title("Media / Images"),
+      S.listItem()
+        .title("Packages")
+        .child(S.documentTypeList("servicePackage")),
       S.divider(),
       // everything else
       ...S.documentTypeListItems().filter(
         (i) =>
-          !["appSettings", "homePage", "service", "mediaImage"].includes(
+          !["appSettings", "homePage", "service", "servicePackage"].includes(
             i.getId() || ""
           )
       ),

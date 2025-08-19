@@ -18,7 +18,8 @@
     "next-sanity": "^10.0.12",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "sanity": "^4.4.1"
+    "sanity": "^4.4.1",
+    "sanity-plugin-media": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
