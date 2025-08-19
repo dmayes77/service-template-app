@@ -6,9 +6,9 @@ import { postType } from "./postType";
 import { authorType } from "./authorType";
 import  appSettings  from "./appSettings";
 import { homePage } from "./homePage";
-import service  from "./services";
-import mediaImage from "./mediaImage";
+import {services} from "./services";
 import hoursEntry from "./objects/hoursEntry";
+import servicePackage from "./servicePackage";
 
 export const schema: { types: SchemaTypeDefinition[] } = {
   types: [
@@ -18,8 +18,9 @@ export const schema: { types: SchemaTypeDefinition[] } = {
     authorType,
     appSettings,
     homePage,
-    service,
-    mediaImage,
+    services,
+
     hoursEntry,
+    servicePackage,
   ],
 };

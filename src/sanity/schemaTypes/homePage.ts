@@ -1,4 +1,6 @@
+// src/sanity/schemaTypes/homePage.ts
 import { defineType, defineField, defineArrayMember } from "sanity";
+import { mediaAssetSource } from "sanity-plugin-media";
 
 export const homePage = defineType({
   name: "homePage",
@@ -6,24 +8,25 @@ export const homePage = defineType({
   type: "document",
   fields: [
     defineField({
-      name: "logoRef",
-      title: "Logo (from Media Library)",
-      type: "reference",
-      to: [{ type: "mediaImage" }],
-      validation: (Rule) => Rule.required(),
+      name: "logo",
+      title: "Logo",
+      type: "image",
+      options: { hotspot: true, sources: [mediaAssetSource] },
+      fields: [{ name: "alt", title: "Alt text", type: "string" }],
+      validation: (R) => R.required(),
     }),
     defineField({
-      name: "backgroundRef",
-      title: "Background image (from Media Library)",
-      type: "reference",
-      to: [{ type: "mediaImage" }],
+      name: "background",
+      title: "Background image",
+      type: "image",
+      options: { hotspot: true, sources: [mediaAssetSource] },
       validation: (R) => R.required(),
     }),
     defineField({
       name: "quickLinks",
-      title: "Buttons (exactly 3)",
+      title: "Quick buttons (up to 3)",
       type: "array",
-      validation: (Rule) => Rule.required().min(3).max(3),
+      validation: (Rule) => Rule.max(3),
       of: [
         defineArrayMember({
           name: "quickLink",
@@ -40,9 +43,7 @@ export const homePage = defineType({
               title: "Link (start with /)",
               type: "string",
               validation: (R) =>
-                R.required()
-                  .regex(/^\/[^\s]*$/, { name: "path" })
-                  .error("Start with /"),
+                R.required().regex(/^\/[^\s]*$/, { name: "path" }),
             }),
             defineField({
               name: "icon",
@@ -50,9 +51,10 @@ export const homePage = defineType({
               type: "string",
               options: {
                 list: [
-                  { title: "Book (Calendar)", value: "calendar-check" },
-                  { title: "Packages", value: "package" },
+                  { title: "Calendar (Book)", value: "calendar-check" },
+                  { title: "Package/Tag", value: "package" },
                   { title: "Gallery", value: "images" },
+                  { title: "Sparkles", value: "sparkles" },
                 ],
                 layout: "radio",
                 direction: "horizontal",

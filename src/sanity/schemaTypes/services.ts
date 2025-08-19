@@ -1,7 +1,8 @@
-// src/sanity/schemaTypes/service.ts
+// src/sanity/schemaTypes/services.ts
 import { defineField, defineType } from "sanity";
+import { mediaAssetSource } from "sanity-plugin-media";
 
-const service = defineType({
+export const services = defineType({
   name: "service",
   title: "Service",
   type: "document",
@@ -28,29 +29,26 @@ const service = defineType({
     }),
     defineField({
       name: "description",
-      title: "Description (≤120 chars, one sentence, no period)",
+      title: "Description (≤120 chars)",
       type: "string",
       validation: (R) => R.required().max(120),
     }),
 
-    // Keep your reference for structured reuse
+    // ⬇️ direct image
     defineField({
-      name: "imageRef",
-      title: "Image (managed in Media / Images)",
-      type: "reference",
-      to: [{ type: "mediaImage" }],
-      options: { filter: "coalesce(archived, false) == false" },
-      validation: (R) => R.required(),
-    }),
-
-    // Add a lightweight thumbnail for list previews
-    defineField({
-      name: "thumb",
-      title: "Thumbnail (for list preview)",
+      name: "image",
+      title: "Image",
       type: "image",
-      options: { hotspot: true },
-      description:
-        "Use “Select from library” to pick the same asset as your Image above (no re-upload).",
+      options: { hotspot: true, sources: [mediaAssetSource] },
+      fields: [
+        defineField({
+          name: "alt",
+          title: "Alt text",
+          type: "string",
+          validation: (R) => R.required().min(4),
+        }),
+      ],
+      validation: (R) => R.required(),
     }),
 
     defineField({ name: "order", title: "Order", type: "number" }),
@@ -61,14 +59,7 @@ const service = defineType({
       initialValue: true,
     }),
   ],
-
   preview: {
-    select: {
-      title: "name",
-      subtitle: "slug.current",
-      media: "thumb", // ← guaranteed to render in list
-    },
+    select: { title: "name", media: "image", subtitle: "slug.current" },
   },
 });
-
-export default service;
