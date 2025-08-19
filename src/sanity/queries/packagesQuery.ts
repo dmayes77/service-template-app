@@ -52,3 +52,29 @@ export const packagesByServiceSlugQuery = groq`
   "imageAlt": coalesce(image.alt, imageRef->image.alt, name)
 }
 `;
+
+export const packageBySlugQuery = groq`
+*[_type == "servicePackage" && slug.current == $slug][0]{
+  _id,
+  name,
+  "slug": slug.current,
+  description,
+  badge,
+  featured,
+  price,
+  priceUnit,
+  durationMinutes,
+  // optional tiered structures (any that exist will resolve)
+  vehicleSizes[]{label, price},
+  pricingTiers[]{label, price},
+  priceBySize{small, medium, large, xl},
+  includes,
+  "imageUrl": image.asset->url,
+  "w": image.asset->metadata.dimensions.width,
+  "h": image.asset->metadata.dimensions.height,
+  service->{
+    _id, name, "slug": slug.current
+  }
+}
+`;
+
