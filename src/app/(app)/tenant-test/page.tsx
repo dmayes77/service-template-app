@@ -1,4 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
 import { loadTenant } from "@/lib/tenant";
+import Image from "next/image";
 
 export default async function TenantTest() {
   const tenant = await loadTenant();
@@ -6,10 +8,12 @@ export default async function TenantTest() {
   return (
     <main className="mx-auto max-w-xl p-6">
       <div className="flex items-center gap-4">
-        <img
+        <Image
           src={tenant.branding.logoUrl}
           alt={`${tenant.name} logo`}
-          className="h-10"
+          width={200}
+          height={60}
+          priority
         />
         <h1 className="text-2xl font-semibold">{tenant.name}</h1>
       </div>
