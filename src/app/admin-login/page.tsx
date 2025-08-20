@@ -2,12 +2,24 @@
 export default function AdminLogin({
   searchParams,
 }: {
-  searchParams?: { next?: string; e?: string };
+  searchParams?: Record<string, string | string[] | undefined>;
 }) {
+  const nextRaw = searchParams?.next;
+  const errRaw = searchParams?.e;
+
   const next =
-    (searchParams?.next && decodeURIComponent(searchParams.next)) ||
-    "/tenant-admin";
-  const error = searchParams?.e === "1";
+    typeof nextRaw === "string"
+      ? nextRaw
+      : Array.isArray(nextRaw)
+        ? nextRaw[0]
+        : "/tenant-admin";
+
+  const error =
+    typeof errRaw === "string"
+      ? errRaw === "1"
+      : Array.isArray(errRaw)
+        ? errRaw[0] === "1"
+        : false;
 
   return (
     <main className="mx-auto max-w-sm p-6">
