@@ -1,8 +1,15 @@
 // src/app/admin-login/page.tsx
+
+type Search = { [key: string]: string | string[] | undefined };
+type Params = { [key: string]: string }; // no dynamics here, but Next expects 'params'
+
 export default function AdminLogin({
+  // 'params' is required by Next's PageProps constraint, even if unused
+  params,
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  params: Params;
+  searchParams?: Search;
 }) {
   const nextRaw = searchParams?.next;
   const errRaw = searchParams?.e;
@@ -11,7 +18,7 @@ export default function AdminLogin({
     typeof nextRaw === "string"
       ? nextRaw
       : Array.isArray(nextRaw)
-        ? nextRaw[0]
+        ? (nextRaw[0] ?? "/tenant-admin")
         : "/tenant-admin";
 
   const error =
