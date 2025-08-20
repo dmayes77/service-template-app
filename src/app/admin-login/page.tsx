@@ -1,32 +1,13 @@
 // src/app/admin-login/page.tsx
+"use client";
 
-type Search = { [key: string]: string | string[] | undefined };
-type Params = { [key: string]: string }; // no dynamics here, but Next expects 'params'
+import { useSearchParams } from "next/navigation";
 
-export default function AdminLogin({
-  // 'params' is required by Next's PageProps constraint, even if unused
-  params,
-  searchParams,
-}: {
-  params: Params;
-  searchParams?: Search;
-}) {
-  const nextRaw = searchParams?.next;
-  const errRaw = searchParams?.e;
+export default function AdminLogin() {
+  const sp = useSearchParams();
 
-  const next =
-    typeof nextRaw === "string"
-      ? nextRaw
-      : Array.isArray(nextRaw)
-        ? (nextRaw[0] ?? "/tenant-admin")
-        : "/tenant-admin";
-
-  const error =
-    typeof errRaw === "string"
-      ? errRaw === "1"
-      : Array.isArray(errRaw)
-        ? errRaw[0] === "1"
-        : false;
+  const next = sp.get("next") ?? "/tenant-admin";
+  const error = sp.get("e") === "1";
 
   return (
     <main className="mx-auto max-w-sm p-6">
@@ -45,6 +26,7 @@ export default function AdminLogin({
             required
             className="w-full rounded border p-2"
             placeholder="••••••••"
+            autoFocus
           />
         </label>
         {error && (
