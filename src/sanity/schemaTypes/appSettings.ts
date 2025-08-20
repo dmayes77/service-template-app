@@ -1,6 +1,6 @@
 // src/sanity/schemaTypes/appSettings.ts
 import { defineType, defineField } from "sanity";
-import hoursEntry from "./objects/hoursEntry";
+import _hoursEntry from "./objects/hoursEntry";
 import { mediaAssetSource } from "sanity-plugin-media";
 
 const appSettings = defineType({
