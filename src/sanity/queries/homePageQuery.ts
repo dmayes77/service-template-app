@@ -5,6 +5,6 @@ export const homePageQuery = groq`
 *[_type == "homePage"][0]{
   "logoUrl": logo.asset->url,
   "bgUrl": background.asset->url,
-  quickLinks[]{ label, href, icon }
+  "quickLinks": quickLinks[]{ label, href, icon }
 }
 `;

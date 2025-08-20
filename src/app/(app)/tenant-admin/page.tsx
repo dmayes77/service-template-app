@@ -14,6 +14,10 @@ type TenantDTO = {
   name: string;
   host?: string | null;
   branding: Branding;
+  plan?: string;
+  status?: "active" | "past_due" | "paused" | "cancelled";
+  minVersion?: string | null;
+  sanity?: { projectId: string; dataset: string; readToken: string } | null;
 };
 
 type ApiResult =
@@ -45,6 +49,11 @@ export default function TenantAdmin() {
     "Mayes Auto Detailing and Ceramic Coatings"
   );
   const [host, setHost] = useState<string>("app.getmadpro.com");
+  const [plan, setPlan] = useState<string>("starter");
+  const [status, setStatus] = useState<
+    "active" | "past_due" | "paused" | "cancelled"
+  >("active");
+  const [minVersion, setMinVersion] = useState<string>("");
 
   const [branding, setBranding] = useState<Branding>({
     primary: "#0ea5e9",
@@ -52,6 +61,10 @@ export default function TenantAdmin() {
     text: "#0b1220",
     logoUrl: "https://placehold.co/200x60?text=MAD",
   });
+
+  const [sanityProjectId, setSanityProjectId] = useState<string>("");
+  const [sanityDataset, setSanityDataset] = useState<string>("");
+  const [sanityReadToken, setSanityReadToken] = useState<string>("");
 
   const [saveRes, setSaveRes] = useState<ApiResult | null>(null);
   const [connectRes, setConnectRes] = useState<ConnectDomainResponse | null>(
@@ -88,8 +101,22 @@ export default function TenantAdmin() {
       }
       if (isTenantDTO(j)) {
         setName(j.name);
-        setHost(j.host ?? "");
+        setHost((j as any).host ?? ""); // host is optional in DTO
         setBranding(j.branding);
+        setPlan((j as any).plan ?? "starter");
+        setStatus(((j as any).status as any) ?? "active");
+        setMinVersion((j as any).minVersion ?? "");
+
+        if ((j as any).sanity) {
+          setSanityProjectId((j as any).sanity.projectId);
+          setSanityDataset((j as any).sanity.dataset);
+          setSanityReadToken((j as any).sanity.readToken);
+        } else {
+          setSanityProjectId("");
+          setSanityDataset("");
+          setSanityReadToken("");
+        }
+
         setSaveRes({ ok: true, data: j, message: "Loaded" });
       } else {
         setSaveRes({ ok: false, error: "Malformed tenant response" });
@@ -116,6 +143,17 @@ export default function TenantAdmin() {
           slug: slug.trim().toLowerCase(),
           name: name.trim(),
           branding,
+          plan,
+          status,
+          minVersion: minVersion || null,
+          sanity:
+            sanityProjectId && sanityDataset && sanityReadToken
+              ? {
+                  projectId: sanityProjectId,
+                  dataset: sanityDataset,
+                  readToken: sanityReadToken,
+                }
+              : null,
         } satisfies Omit<TenantDTO, "host">),
       });
       const j = await r.json();
@@ -152,7 +190,6 @@ export default function TenantAdmin() {
         }
       );
 
-      // We construct a valid union in both branches:
       const payload = (await r.json().catch(() => ({}))) as Record<
         string,
         unknown
@@ -299,6 +336,73 @@ export default function TenantAdmin() {
             placeholder="https://…"
           />
         </label>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Plan</span>
+            <select
+              className="rounded border p-2"
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
+            >
+              <option value="starter">starter</option>
+              <option value="pro">pro</option>
+              <option value="scale">scale</option>
+            </select>
+          </label>
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Status</span>
+            <select
+              className="rounded border p-2"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as any)}
+            >
+              <option value="active">active</option>
+              <option value="past_due">past_due</option>
+              <option value="paused">paused</option>
+              <option value="cancelled">cancelled</option>
+            </select>
+          </label>
+        </div>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-medium">
+            Min App Version (optional)
+          </span>
+          <input
+            className="rounded border p-2"
+            value={minVersion}
+            onChange={(e) => setMinVersion(e.target.value)}
+            placeholder="e.g. 1.3.0"
+          />
+        </label>
+
+        <div className="mt-4 grid md:grid-cols-3 gap-4">
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Sanity Project ID</span>
+            <input
+              className="rounded border p-2"
+              value={sanityProjectId}
+              onChange={(e) => setSanityProjectId(e.target.value)}
+            />
+          </label>
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Sanity Dataset</span>
+            <input
+              className="rounded border p-2"
+              value={sanityDataset}
+              onChange={(e) => setSanityDataset(e.target.value)}
+            />
+          </label>
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Sanity Read Token</span>
+            <input
+              className="rounded border p-2"
+              value={sanityReadToken}
+              onChange={(e) => setSanityReadToken(e.target.value)}
+            />
+          </label>
+        </div>
 
         <button
           type="submit"

@@ -12,7 +12,9 @@ export async function GET(_req: Request, ctx: any) {
   const db = controlAdmin();
   const { data, error } = await db
     .from("tenants")
-    .select("slug,name,host,branding")
+    .select(
+      "slug,name,host,branding,plan,status,sanity_project_id,sanity_dataset,sanity_read_token,min_version"
+    )
     .eq("slug", slug)
     .maybeSingle();
 
@@ -27,6 +29,17 @@ export async function GET(_req: Request, ctx: any) {
     slug: data.slug,
     name: data.name,
     host: data.host,
+    plan: data.plan,
+    status: data.status,
+    minVersion: data.min_version,
     branding: data.branding ?? {},
+    sanity:
+      data.sanity_project_id && data.sanity_dataset && data.sanity_read_token
+        ? {
+            projectId: data.sanity_project_id,
+            dataset: data.sanity_dataset,
+            readToken: data.sanity_read_token,
+          }
+        : null,
   });
 }
