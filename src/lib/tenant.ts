@@ -1,4 +1,3 @@
-// src/lib/tenant.ts
 import "server-only";
 import { headers as getHeaders } from "next/headers";
 import { controlAdmin } from "@/lib/control-db";
@@ -15,7 +14,7 @@ type DbTenant = {
   slug: string;
   name: string;
   host: string | null;
-  branding: unknown; // we'll validate/normalize this safely
+  branding: unknown;
 };
 
 function normalizeHost(host?: string | null) {
@@ -28,7 +27,6 @@ function isRecord(x: unknown): x is Record<string, unknown> {
 function str(v: unknown, fallback: string): string {
   return typeof v === "string" ? v : fallback;
 }
-/** Convert unknown JSON into a safe Branding object with fallbacks */
 function normalizeBranding(input: unknown): Branding {
   const obj = isRecord(input) ? input : {};
   return {
@@ -41,8 +39,8 @@ function normalizeBranding(input: unknown): Branding {
 
 export async function loadTenant(): Promise<Tenant> {
   const h = await getHeaders();
-  const hint = h.get("x-tenant-hint") ?? undefined; // dev: ?tenant=acme
-  const host = normalizeHost(h.get("x-req-host")); // set by middleware
+  const hint = h.get("x-tenant-hint") ?? undefined; // dev: ?tenant=slug
+  const host = normalizeHost(h.get("x-req-host")); // prod: real host
 
   const db = controlAdmin();
   let row: DbTenant | null = null;
@@ -68,6 +66,6 @@ export async function loadTenant(): Promise<Tenant> {
     return { slug: row.slug, name: row.name, branding: b };
   }
 
-  // Safe fallback for dev
+  // dev fallback
   return (hint && TENANTS[hint]) || TENANTS.acme;
 }

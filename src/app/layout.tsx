@@ -1,8 +1,7 @@
-// src/app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
 import SafeAreaGlobals from "@/components/safe-area/SafeAreaGlobals";
-import { loadTenant } from "@/lib/tenant"; // ← NEW
+import { loadTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = {
   title: {
@@ -24,7 +23,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const tenant = await loadTenant(); // ← NEW
+  const tenant = await loadTenant();
   const b = tenant.branding;
   const css = `
     :root {
@@ -32,13 +31,12 @@ export default async function RootLayout({
       --brand-accent:  ${b.accent};
       --brand-text:    ${b.text};
     }
-      body { color: var(--brand-text); }
   `;
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <style dangerouslySetInnerHTML={{ __html: css }} /> {/* ← NEW */}
+        <style dangerouslySetInnerHTML={{ __html: css }} />
         <SafeAreaGlobals />
         {children}
       </body>
