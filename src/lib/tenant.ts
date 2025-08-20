@@ -1,26 +1,45 @@
 import "server-only";
 import { headers as getHeaders } from "next/headers";
 import { controlAdmin } from "@/lib/control-db";
-import { TENANTS, type Tenant } from "./tenants.local";
+import { TENANTS } from "./tenants.local";
 
-type Branding = {
+export type Branding = {
   primary: string;
   accent: string;
   text: string;
   logoUrl: string;
 };
 
+export type ResolvedTenant = {
+  slug: string;
+  name: string;
+  branding: Branding;
+  plan?: string;
+  status?: "active" | "past_due" | "paused" | "cancelled";
+  sanity?: {
+    projectId: string;
+    dataset: string;
+    readToken: string;
+  } | null;
+  minVersion?: string | null;
+};
+
 type DbTenant = {
   slug: string;
   name: string;
   host: string | null;
+  plan: string | null;
+  status: string | null;
   branding: unknown;
+  sanity_project_id: string | null;
+  sanity_dataset: string | null;
+  sanity_read_token: string | null;
+  min_version: string | null;
 };
 
 function normalizeHost(host?: string | null) {
   return host ? host.split(",")[0].replace(/:\d+$/, "").toLowerCase() : null;
 }
-
 function isRecord(x: unknown): x is Record<string, unknown> {
   return typeof x === "object" && x !== null && !Array.isArray(x);
 }
@@ -37,25 +56,28 @@ function normalizeBranding(input: unknown): Branding {
   };
 }
 
-export async function loadTenant(): Promise<Tenant> {
+export async function loadTenant(): Promise<ResolvedTenant> {
   const h = await getHeaders();
-  const hint = h.get("x-tenant-hint") ?? undefined; // dev: ?tenant=slug
-  const host = normalizeHost(h.get("x-req-host")); // prod: real host
+  const hint = h.get("x-tenant-hint") ?? undefined;
+  const host = normalizeHost(h.get("x-req-host"));
 
   const db = controlAdmin();
   let row: DbTenant | null = null;
 
+  const baseSelect =
+    "slug,name,host,plan,status,branding,sanity_project_id,sanity_dataset,sanity_read_token,min_version";
+
   if (hint) {
     const { data } = await db
       .from("tenants")
-      .select("slug,name,host,branding")
+      .select(baseSelect)
       .eq("slug", hint)
       .maybeSingle<DbTenant>();
     row = data;
   } else if (host) {
     const { data } = await db
       .from("tenants")
-      .select("slug,name,host,branding")
+      .select(baseSelect)
       .eq("host", host)
       .maybeSingle<DbTenant>();
     row = data;
@@ -63,9 +85,33 @@ export async function loadTenant(): Promise<Tenant> {
 
   if (row) {
     const b = normalizeBranding(row.branding);
-    return { slug: row.slug, name: row.name, branding: b };
+    const sanity =
+      row.sanity_project_id && row.sanity_dataset && row.sanity_read_token
+        ? {
+            projectId: row.sanity_project_id,
+            dataset: row.sanity_dataset,
+            readToken: row.sanity_read_token,
+          }
+        : null;
+
+    return {
+      slug: row.slug,
+      name: row.name,
+      branding: b,
+      plan: row.plan ?? undefined,
+      status: (row.status as ResolvedTenant["status"]) ?? "active",
+      sanity,
+      minVersion: row.min_version,
+    };
   }
 
   // dev fallback
-  return (hint && TENANTS[hint]) || TENANTS.acme;
+  const dev = (hint && TENANTS[hint]) || TENANTS.acme;
+  return {
+    ...dev,
+    plan: "starter",
+    status: "active",
+    sanity: null,
+    minVersion: null,
+  };
 }
