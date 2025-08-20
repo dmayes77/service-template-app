@@ -32,6 +32,7 @@ export default async function RootLayout({
       --brand-accent:  ${b.accent};
       --brand-text:    ${b.text};
     }
+      body { color: var(--brand-text); }
   `;
 
   return (
