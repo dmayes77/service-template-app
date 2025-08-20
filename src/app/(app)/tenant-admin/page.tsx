@@ -1,3 +1,4 @@
+// src/app/(app)/tenant-admin/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,16 +10,22 @@ type Branding = {
   logoUrl: string;
 };
 
+type Status = "active" | "past_due" | "paused" | "cancelled";
+
+type SanityCfg = { projectId: string; dataset: string; readToken: string };
+
 type TenantDTO = {
   slug: string;
   name: string;
   host?: string | null;
   branding: Branding;
   plan?: string;
-  status?: "active" | "past_due" | "paused" | "cancelled";
+  status?: Status;
   minVersion?: string | null;
-  sanity?: { projectId: string; dataset: string; readToken: string } | null;
+  sanity?: SanityCfg | null;
 };
+
+type ApiError = { error?: string; details?: unknown };
 
 type ApiResult =
   | { ok: true; data?: unknown; message?: string }
@@ -28,19 +35,49 @@ type ConnectDomainSuccess = { ok: true; host: string; vercel?: unknown };
 type ConnectDomainFailure = { ok: false; error: string; details?: unknown };
 type ConnectDomainResponse = ConnectDomainSuccess | ConnectDomainFailure;
 
-function isTenantDTO(x: unknown): x is TenantDTO {
-  if (typeof x !== "object" || x === null) return false;
-  const o = x as Record<string, unknown>;
-  const b = o.branding as Record<string, unknown> | undefined;
+// ---------- type guards ----------
+function isRecord(x: unknown): x is Record<string, unknown> {
+  return typeof x === "object" && x !== null;
+}
+function isBranding(x: unknown): x is Branding {
+  if (!isRecord(x)) return false;
   return (
-    typeof o.slug === "string" &&
-    typeof o.name === "string" &&
-    !!b &&
-    typeof b.primary === "string" &&
-    typeof b.accent === "string" &&
-    typeof b.text === "string" &&
-    typeof b.logoUrl === "string"
+    typeof x.primary === "string" &&
+    typeof x.accent === "string" &&
+    typeof x.text === "string" &&
+    typeof x.logoUrl === "string"
   );
+}
+function isStatus(x: unknown): x is Status {
+  return (
+    x === "active" || x === "past_due" || x === "paused" || x === "cancelled"
+  );
+}
+function isSanityCfg(x: unknown): x is SanityCfg {
+  if (!isRecord(x)) return false;
+  return (
+    typeof x.projectId === "string" &&
+    typeof x.dataset === "string" &&
+    typeof x.readToken === "string"
+  );
+}
+function isTenantDTO(x: unknown): x is TenantDTO {
+  if (!isRecord(x)) return false;
+  if (typeof x.slug !== "string" || typeof x.name !== "string") return false;
+  if (!isBranding(x.branding)) return false;
+
+  const hostOk =
+    x.host === undefined || x.host === null || typeof x.host === "string";
+  const planOk = x.plan === undefined || typeof x.plan === "string";
+  const statusOk = x.status === undefined || isStatus(x.status);
+  const minOk =
+    x.minVersion === undefined ||
+    x.minVersion === null ||
+    typeof x.minVersion === "string";
+  const sanityOk =
+    x.sanity === undefined || x.sanity === null || isSanityCfg(x.sanity);
+
+  return hostOk && planOk && statusOk && minOk && sanityOk;
 }
 
 export default function TenantAdmin() {
@@ -50,9 +87,7 @@ export default function TenantAdmin() {
   );
   const [host, setHost] = useState<string>("app.getmadpro.com");
   const [plan, setPlan] = useState<string>("starter");
-  const [status, setStatus] = useState<
-    "active" | "past_due" | "paused" | "cancelled"
-  >("active");
+  const [status, setStatus] = useState<Status>("active");
   const [minVersion, setMinVersion] = useState<string>("");
 
   const [branding, setBranding] = useState<Branding>({
@@ -89,9 +124,10 @@ export default function TenantAdmin() {
       const r = await fetch(`/api/tenants/${encodeURIComponent(slug)}`, {
         cache: "no-store",
       });
-      const j = (await r.json()) as unknown;
+      const dataUnknown: unknown = await r.json();
+
       if (!r.ok) {
-        const err = j as { error?: string; details?: unknown };
+        const err = isRecord(dataUnknown) ? (dataUnknown as ApiError) : {};
         setSaveRes({
           ok: false,
           error: err.error ?? "Failed to load tenant",
@@ -99,33 +135,34 @@ export default function TenantAdmin() {
         });
         return;
       }
-      if (isTenantDTO(j)) {
-        setName(j.name);
-        setHost((j as any).host ?? ""); // host is optional in DTO
-        setBranding(j.branding);
-        setPlan((j as any).plan ?? "starter");
-        setStatus(((j as any).status as any) ?? "active");
-        setMinVersion((j as any).minVersion ?? "");
 
-        if ((j as any).sanity) {
-          setSanityProjectId((j as any).sanity.projectId);
-          setSanityDataset((j as any).sanity.dataset);
-          setSanityReadToken((j as any).sanity.readToken);
-        } else {
-          setSanityProjectId("");
-          setSanityDataset("");
-          setSanityReadToken("");
-        }
-
-        setSaveRes({ ok: true, data: j, message: "Loaded" });
-      } else {
+      if (!isTenantDTO(dataUnknown)) {
         setSaveRes({ ok: false, error: "Malformed tenant response" });
+        return;
       }
+
+      const j = dataUnknown;
+      setName(j.name);
+      setHost(j.host ?? "");
+      setBranding(j.branding);
+      setPlan(j.plan ?? "starter");
+      setStatus(j.status ?? "active");
+      setMinVersion(j.minVersion ?? "");
+
+      if (j.sanity) {
+        setSanityProjectId(j.sanity.projectId);
+        setSanityDataset(j.sanity.dataset);
+        setSanityReadToken(j.sanity.readToken);
+      } else {
+        setSanityProjectId("");
+        setSanityDataset("");
+        setSanityReadToken("");
+      }
+
+      setSaveRes({ ok: true, data: j, message: "Loaded" });
     } catch (e) {
-      setSaveRes({
-        ok: false,
-        error: e instanceof Error ? e.message : "Network error",
-      });
+      const msg = e instanceof Error ? e.message : "Network error";
+      setSaveRes({ ok: false, error: msg });
     } finally {
       setLoadingLoad(false);
     }
@@ -136,29 +173,33 @@ export default function TenantAdmin() {
     setLoadingSave(true);
     setSaveRes(null);
     try {
+      const body: TenantDTO = {
+        slug: slug.trim().toLowerCase(),
+        name: name.trim(),
+        branding,
+        plan,
+        status,
+        minVersion: minVersion || null,
+        sanity:
+          sanityProjectId && sanityDataset && sanityReadToken
+            ? {
+                projectId: sanityProjectId,
+                dataset: sanityDataset,
+                readToken: sanityReadToken,
+              }
+            : null,
+      };
+
       const r = await fetch(`/api/tenants`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: slug.trim().toLowerCase(),
-          name: name.trim(),
-          branding,
-          plan,
-          status,
-          minVersion: minVersion || null,
-          sanity:
-            sanityProjectId && sanityDataset && sanityReadToken
-              ? {
-                  projectId: sanityProjectId,
-                  dataset: sanityDataset,
-                  readToken: sanityReadToken,
-                }
-              : null,
-        } satisfies Omit<TenantDTO, "host">),
+        body: JSON.stringify(body),
       });
-      const j = await r.json();
+
+      const dataUnknown: unknown = await r.json();
+
       if (!r.ok) {
-        const err = j as { error?: string; details?: unknown };
+        const err = isRecord(dataUnknown) ? (dataUnknown as ApiError) : {};
         setSaveRes({
           ok: false,
           error: err.error ?? "Save failed",
@@ -166,12 +207,10 @@ export default function TenantAdmin() {
         });
         return;
       }
-      setSaveRes({ ok: true, data: j, message: "Saved" });
+      setSaveRes({ ok: true, data: dataUnknown, message: "Saved" });
     } catch (e) {
-      setSaveRes({
-        ok: false,
-        error: e instanceof Error ? e.message : "Network error",
-      });
+      const msg = e instanceof Error ? e.message : "Network error";
+      setSaveRes({ ok: false, error: msg });
     } finally {
       setLoadingSave(false);
     }
@@ -190,37 +229,22 @@ export default function TenantAdmin() {
         }
       );
 
-      const payload = (await r.json().catch(() => ({}))) as Record<
-        string,
-        unknown
-      >;
+      const payload: unknown = await r.json().catch(() => ({}) as unknown);
 
       if (r.ok) {
+        const p = isRecord(payload) ? payload : {};
         const hostFromPayload =
-          typeof payload?.host === "string"
-            ? (payload.host as string)
-            : host.trim().toLowerCase();
-        setConnectRes({
-          ok: true,
-          host: hostFromPayload,
-          vercel: payload?.vercel,
-        });
+          typeof p.host === "string" ? p.host : host.trim().toLowerCase();
+        setConnectRes({ ok: true, host: hostFromPayload, vercel: p.vercel });
       } else {
+        const p = isRecord(payload) ? payload : {};
         const msg =
-          typeof payload?.error === "string"
-            ? (payload.error as string)
-            : "Vercel domain attach failed";
-        setConnectRes({
-          ok: false,
-          error: msg,
-          details: payload?.details ?? payload,
-        });
+          typeof p.error === "string" ? p.error : "Vercel domain attach failed";
+        setConnectRes({ ok: false, error: msg, details: p.details ?? payload });
       }
     } catch (e) {
-      setConnectRes({
-        ok: false,
-        error: e instanceof Error ? e.message : "Network error",
-      });
+      const msg = e instanceof Error ? e.message : "Network error";
+      setConnectRes({ ok: false, error: msg });
     } finally {
       setLoadingConnect(false);
     }
@@ -236,17 +260,16 @@ export default function TenantAdmin() {
           method: "DELETE",
         }
       );
-      const j = await r.json().catch(() => ({}));
+      const payload: unknown = await r.json().catch(() => ({}) as unknown);
+      const err = isRecord(payload) ? (payload as ApiError) : {};
       setDisconnectRes({
         ok: r.ok,
-        error: r.ok ? undefined : j?.error || "Failed",
+        error: r.ok ? undefined : (err.error ?? "Failed"),
       });
       if (r.ok) setHost("");
     } catch (e) {
-      setDisconnectRes({
-        ok: false,
-        error: e instanceof Error ? e.message : "Network error",
-      });
+      const msg = e instanceof Error ? e.message : "Network error";
+      setDisconnectRes({ ok: false, error: msg });
     } finally {
       setLoadingDisconnect(false);
     }
@@ -355,7 +378,7 @@ export default function TenantAdmin() {
             <select
               className="rounded border p-2"
               value={status}
-              onChange={(e) => setStatus(e.target.value as any)}
+              onChange={(e) => setStatus(e.target.value as Status)}
             >
               <option value="active">active</option>
               <option value="past_due">past_due</option>

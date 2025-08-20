@@ -1,15 +1,19 @@
+// src/lib/sanity.ts
 import "server-only";
 import { createClient, type ClientConfig } from "next-sanity";
 import { loadTenant } from "./tenant";
 
-// Strict: must have per-tenant Sanity configured
+class SanityConfigError extends Error {
+  readonly code = "SANITY_CONFIG";
+  constructor(message = "Sanity not configured for tenant") {
+    super(message);
+    this.name = "SanityConfigError";
+  }
+}
+
 export async function tenantSanityClient() {
   const tenant = await loadTenant();
-  if (!tenant.sanity) {
-    const e = new Error("Sanity not configured for tenant");
-    (e as any).code = "SANITY_CONFIG";
-    throw e;
-  }
+  if (!tenant.sanity) throw new SanityConfigError();
 
   const cfg: ClientConfig = {
     projectId: tenant.sanity.projectId,
@@ -22,7 +26,6 @@ export async function tenantSanityClient() {
   return createClient(cfg);
 }
 
-// Safe: returns null if not configured so pages can render with fallbacks
 export async function maybeTenantSanityClient() {
   const tenant = await loadTenant();
   if (!tenant.sanity) return null;
