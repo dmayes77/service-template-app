@@ -1,64 +1,41 @@
 // src/app/(app)/packages/[slug]/page.tsx
-import { groq } from "next-sanity";
-import { client } from "@/sanity/lib/client";
 import { notFound } from "next/navigation";
-import PackageDetail, {
-  PackageDetailDoc,
-} from "@/components/app/PackageDetail";
+import { clientSafe as client } from "@/sanity/lib/client";
+// import your GROQ here, e.g.:
+// import { packageBySlugQuery } from "@/sanity/queries/packageBySlug";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const dynamicParams = true;
 
-// Static params for SSG
-export async function generateStaticParams() {
-  const slugs = await client.fetch<string[]>(
-    groq`*[_type == "servicePackage" && defined(slug.current)][].slug.current`
-  );
-  return slugs.map((slug) => ({ slug }));
-}
+type Pkg = {
+  _id: string;
+  title: string;
+  slug?: { current: string };
+  // add whatever fields you need
+};
 
-// Head metadata — NOTE: await params
-export async function generateMetadata({
+export default async function PackagePage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = await params;
-  const data = await client.fetch<{ name?: string }>(
-    groq`*[_type == "servicePackage" && slug.current == $slug][0]{name}`,
-    { slug }
-  );
-  return { title: data?.name ?? "Package" };
-}
+  const { slug } = params;
 
-// Page — NOTE: await params
-export default async function PackageDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-
-  const data = await client.fetch<PackageDetailDoc | null>(
-    groq`
-      *[_type == "servicePackage" && slug.current == $slug][0]{
-        _id,
-        name,
-        slug,                     // keep object shape {current}
-        description,
-        mainDescription,
-        price,
-        priceUnit,
-        durationMinutes,
-        includes,
-        "imageUrl": image.asset->url,
-        "imageAlt": coalesce(image.alt, name),
-        tieredPricing,
-        badge
-      }
-    `,
+  // Replace with your query and params:
+  // const data = await client.fetch<Pkg | null>(packageBySlugQuery, { slug });
+  const data = await client.fetch<Pkg | null>(
+    "*[_type == 'package' && slug.current == $slug][0]",
     { slug }
   );
 
   if (!data) notFound();
-  return <PackageDetail pkg={data} />;
+
+  // TODO: render your real UI here
+  return (
+    <main className="mx-auto max-w-2xl p-6">
+      <h1 className="text-2xl font-semibold">{data.title}</h1>
+      {/* ...rest of your detail view... */}
+    </main>
+  );
 }
