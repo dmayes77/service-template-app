@@ -1,5 +1,5 @@
 // src/sanity/lib/client.ts
-// server-only tenant-aware Sanity client proxy with options support
+// server-only tenant-aware Sanity client proxy with options + withConfig support
 import "server-only";
 import { tenantSanityClient, maybeTenantSanityClient } from "@/lib/sanity";
 
@@ -14,72 +14,80 @@ type FetchOptions = {
   [key: string]: unknown;
 };
 
-// --- internal helpers to satisfy TS overloads without using `any` ---
-async function fetchStrict<T>(
-  query: string,
-  params?: Params,
-  options?: FetchOptions
-): Promise<T> {
-  const c = await tenantSanityClient();
-
-  if (options && params) {
-    // Pass all three args
-    return (
-      c as unknown as {
-        fetch: (q: string, p: Params, o: FetchOptions) => Promise<T>;
-      }
-    ).fetch(query, params, options);
-  }
-  if (params) {
-    return c.fetch<T>(query, params);
-  }
-  if (options) {
-    // Explicitly pass `undefined` for params to hit the correct overload
-    return (
-      c as unknown as {
-        fetch: (q: string, p: undefined, o: FetchOptions) => Promise<T>;
-      }
-    ).fetch(query, undefined, options);
-  }
-  return c.fetch<T>(query);
+interface ClientLike {
+  fetch<T>(query: string, params?: Params, options?: FetchOptions): Promise<T>;
+  withConfig(cfg: Record<string, unknown>): ClientLike;
 }
 
-async function fetchSafe<T>(
-  query: string,
-  params?: Params,
-  options?: FetchOptions
-): Promise<T | null> {
-  const c = await maybeTenantSanityClient();
-  if (!c) return null;
+function buildStrict(_defaultCfg?: Record<string, unknown>): ClientLike {
+  return {
+    async fetch<T>(
+      query: string,
+      params?: Params,
+      options?: FetchOptions
+    ): Promise<T> {
+      const c = await tenantSanityClient();
+      if (options && params) {
+        return (
+          c as unknown as {
+            fetch: (q: string, p: Params, o: FetchOptions) => Promise<T>;
+          }
+        ).fetch(query, params, options);
+      }
+      if (params) return c.fetch<T>(query, params);
+      if (options) {
+        return (
+          c as unknown as {
+            fetch: (q: string, p: undefined, o: FetchOptions) => Promise<T>;
+          }
+        ).fetch(query, undefined, options);
+      }
+      return c.fetch<T>(query);
+    },
+    // No-op: we ignore additional config here and keep tenant-aware behavior.
+    withConfig(cfg: Record<string, unknown>): ClientLike {
+      // If you want to honor specific cfg (e.g., apiVersion) later,
+      // you can thread it through loadTenant/tenantSanityClient.
+      return buildStrict({ ..._defaultCfg, ...cfg });
+    },
+  };
+}
 
-  if (options && params) {
-    return (
-      c as unknown as {
-        fetch: (q: string, p: Params, o: FetchOptions) => Promise<T>;
+function buildSafe(_defaultCfg?: Record<string, unknown>): ClientLike {
+  return {
+    async fetch<T>(
+      query: string,
+      params?: Params,
+      options?: FetchOptions
+    ): Promise<T> {
+      const c = await maybeTenantSanityClient();
+      if (!c) return null as unknown as T;
+      if (options && params) {
+        return (
+          c as unknown as {
+            fetch: (q: string, p: Params, o: FetchOptions) => Promise<T>;
+          }
+        ).fetch(query, params, options);
       }
-    ).fetch(query, params, options);
-  }
-  if (params) {
-    return c.fetch<T>(query, params);
-  }
-  if (options) {
-    return (
-      c as unknown as {
-        fetch: (q: string, p: undefined, o: FetchOptions) => Promise<T>;
+      if (params) return c.fetch<T>(query, params);
+      if (options) {
+        return (
+          c as unknown as {
+            fetch: (q: string, p: undefined, o: FetchOptions) => Promise<T>;
+          }
+        ).fetch(query, undefined, options);
       }
-    ).fetch(query, undefined, options);
-  }
-  return c.fetch<T>(query);
+      return c.fetch<T>(query);
+    },
+    withConfig(cfg: Record<string, unknown>): ClientLike {
+      return buildSafe({ ..._defaultCfg, ...cfg });
+    },
+  };
 }
 
 // --- public API (drop-in) ---
-export const client = {
-  fetch: fetchStrict,
-};
-
-export const clientSafe = {
-  fetch: fetchSafe,
-};
+export const client: ClientLike = buildStrict();
+export const clientSafe: ClientLike = buildSafe();
 
 // Re-export groq for convenience
 export { groq } from "next-sanity";
